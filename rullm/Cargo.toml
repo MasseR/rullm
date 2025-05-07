@@ -1,0 +1,13 @@
+[package]
+name = "rullm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-openai = "0.28.1"
+clap = { version = "4.5.37", features = ["derive"] }
+config = "0.15.11"
+dirs-next = "2.0.0"
+rmcp = { version = "0.1.5", features = ["transport-child-process", "client"] }
+rustyline = { version = "15.0.0", features = ["with-file-history"] }
+tokio = { version = "1.45.0", features = ["full"] }

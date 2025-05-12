@@ -25,10 +25,16 @@ pub struct ShoppingList {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Label {
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ShoppingListItem {
     pub id: String,
     pub note: String,
     pub checked: bool,
+    pub label: Option<Label>
 }
 
 // Fetch a single pageful of shopping lists

@@ -3,9 +3,16 @@ use futures::StreamExt;
 use rmcp::Error;
 use rmcp::model::{CallToolResult, Content, IntoContents as _};
 use rmcp::{ServerHandler, model::ServerInfo, schemars, tool};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::env::Env;
+
+#[derive(Serialize, Debug)]
+pub struct FilteredItem {
+    pub name: String,
+    pub label: Option<String>,
+    pub checked: bool,
+}
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct NewItemRequest {
@@ -30,33 +37,54 @@ impl ShoppingLists {
         #[tool(aggr)] NewItemRequest { name }: NewItemRequest,
     ) -> Result<CallToolResult, Error> {
         let list_id = &self.env.list_id;
-        match self.env.api_client.new_shopping_list_item(&list_id, &name).await {
-          Ok(_) => {
-                Ok(CallToolResult::success(Content::text(format!("Successfully added '{name}'")).into_contents()))
-            }
-          Err(err) => Err(Error::invalid_request(format!("Failed to add item: {:?}", err), None))
+        match self
+            .env
+            .api_client
+            .new_shopping_list_item(&list_id, &name)
+            .await
+        {
+            Ok(_) => Ok(CallToolResult::success(
+                Content::text(format!("Successfully added '{name}'")).into_contents(),
+            )),
+            Err(err) => Err(Error::invalid_request(
+                format!("Failed to add item: {:?}", err),
+                None,
+            )),
         }
     }
 
     #[tool(description = "See what is in the shopping list currently")]
     pub async fn current_items(&self) -> Result<CallToolResult, Error> {
         let list_id = &self.env.list_id;
-        let items: Vec<ShoppingListItem> = self.env.api_client.get_all_shopping_list_items(&list_id)
+        let items: Vec<FilteredItem> = self
+            .env
+            .api_client
+            .get_all_shopping_list_items(&list_id)
             .filter_map(|x| async move {
                 match x {
                     Ok(item) => {
                         if item.checked {
                             None
                         } else {
-                            Some(item)
+                            Some(simplify(&item))
                         }
                     }
                     Err(_) => None,
                 }
             })
-            .collect::<Vec<ShoppingListItem>>()
+            .collect::<Vec<FilteredItem>>()
             .await;
-        Ok(CallToolResult::success(Content::json(items)?.into_contents()))
+        Ok(CallToolResult::success(
+            Content::json(items)?.into_contents(),
+        ))
+    }
+}
+
+fn simplify(item: &ShoppingListItem) -> FilteredItem {
+    FilteredItem {
+        name: item.note.clone(),
+        label: item.label.as_ref().cloned().map(|x| x.name),
+        checked: item.checked,
     }
 }
 

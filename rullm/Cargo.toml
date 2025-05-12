@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = { version = "1.0.98", features = ["backtrace"] }
 async-openai = "0.28.1"
 clap = { version = "4.5.37", features = ["derive"] }
 config = "0.15.11"
 dirs-next = "2.0.0"
 rmcp = { version = "0.1.5", features = ["transport-child-process", "client"] }
 rustyline = { version = "15.0.0", features = ["with-file-history"] }
+serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.45.0", features = ["full"] }

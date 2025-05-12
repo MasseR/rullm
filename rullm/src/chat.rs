@@ -7,7 +7,6 @@ use async_openai::{
         ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
         ChatCompletionRequestToolMessage, ChatCompletionRequestToolMessageArgs,
         ChatCompletionRequestUserMessage, ChatCompletionRequestUserMessageArgs,
-        CreateChatCompletionRequestArgs, CreateChatCompletionResponse,
     },
 };
 use rmcp::model::{RawContent, RawTextContent};
@@ -33,16 +32,6 @@ pub async fn run(env: Env) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn request_llm(env: &Env, messages: &Vec<ChatCompletionRequestMessage>) -> anyhow::Result<CreateChatCompletionResponse> {
-    let model = env.conf.llm.model.as_ref().cloned().unwrap_or(String::from("gpt-4o"));
-    let request = CreateChatCompletionRequestArgs::default()
-        .model(model)
-        .messages(messages.clone())
-        .tools(env.mcp.list_tools().await?)
-        .build()?;
-    let response = env.client.chat().create(request).await?;
-    Ok(response)
-}
 
 // Chat with AI
 // Will keep track of message history via the 'messages' field
@@ -62,7 +51,7 @@ async fn chat(
             bail!("Too many LLM requests")
         }
 
-        let response = request_llm(&env, &messages).await?;
+        let response = env.openai_client.chat(&messages).await?;
         let mut text_responses: Vec<String> = vec![];
         let mut tool_calls: Vec<ChatCompletionMessageToolCall> = vec![];
         for message in response.choices.into_iter().map(|x| x.message) {

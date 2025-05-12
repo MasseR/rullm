@@ -11,7 +11,7 @@ use rmcp::{
 };
 use tokio::process::Command;
 
-use crate::args::Conf;
+use crate::conf::Conf;
 
 pub struct MCP {
     client: RunningService<RoleClient, ()>,

@@ -24,7 +24,7 @@ pub struct ShoppingList{
   // There are plenty of labels that could be valuable
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ShoppingListItem {
   pub id: String,
   pub note: String,

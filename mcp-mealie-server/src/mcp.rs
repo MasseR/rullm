@@ -1,4 +1,4 @@
-use crate::mealie::{self, ShoppingListItem};
+use crate::mealie::ShoppingListItem;
 use futures::StreamExt;
 use rmcp::Error;
 use rmcp::model::{CallToolResult, Content, IntoContents as _};
@@ -29,8 +29,8 @@ impl ShoppingLists {
         &self,
         #[tool(aggr)] NewItemRequest { name }: NewItemRequest,
     ) -> Result<CallToolResult, Error> {
-        let list_id = &self.env.conf.list_id;
-        match mealie::new_shopping_list_item(&self.env, &list_id, &name).await {
+        let list_id = &self.env.list_id;
+        match self.env.api_client.new_shopping_list_item(&list_id, &name).await {
           Ok(_) => {
                 Ok(CallToolResult::success(Content::text(format!("Successfully added '{name}'")).into_contents()))
             }
@@ -40,8 +40,8 @@ impl ShoppingLists {
 
     #[tool(description = "See what is in the shopping list currently")]
     pub async fn current_items(&self) -> Result<CallToolResult, Error> {
-        let list_id = &self.env.conf.list_id;
-        let items: Vec<ShoppingListItem> = mealie::get_all_shopping_list_items(&self.env, &list_id)
+        let list_id = &self.env.list_id;
+        let items: Vec<ShoppingListItem> = self.env.api_client.get_all_shopping_list_items(&list_id)
             .filter_map(|x| async move {
                 match x {
                     Ok(item) => {

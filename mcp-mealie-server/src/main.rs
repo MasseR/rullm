@@ -1,5 +1,5 @@
 use std::error::Error;
-use mcp_mealie_server::{env::{Conf, Env}, mcp::ShoppingLists};
+use mcp_mealie_server::{conf::Conf, env::Env, mcp::ShoppingLists};
 use rmcp::{ServiceExt, transport::stdio};
 
 

@@ -19,6 +19,19 @@ impl MealieClient {
         Ok(MealieClient { client, conf })
     }
 
+    pub async fn update_shopping_list_items(&self, items: &[ShoppingListItem]) -> anyhow::Result<()> {
+        let url = format!("{}/households/shopping/items", self.conf.base_url);
+        let resp = self
+            .client
+            .put(url)
+            .bearer_auth(&self.conf.api_key)
+            .json(items)
+            .send()
+            .await?;
+        resp.error_for_status()?;
+        Ok(())
+    }
+
     pub async fn new_shopping_list_item(&self, list_id: &str, name: &str) -> anyhow::Result<()> {
         let url = format!("{}/households/shopping/items", self.conf.base_url);
         let item = PostShoppingListItem {
@@ -160,11 +173,13 @@ pub struct Label {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct ShoppingListItem {
     pub id: String,
     pub note: String,
     pub checked: bool,
     pub label: Option<Label>,
+    pub shopping_list_id: String,
 }
 
 // Internal API entity

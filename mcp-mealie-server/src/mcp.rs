@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::sync::Arc;
+
 use crate::mealie::ShoppingListItem;
 use futures::StreamExt;
 use rmcp::Error;
@@ -15,9 +18,15 @@ pub struct FilteredItem {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-pub struct NewItemRequest {
+pub struct ItemRequest {
     #[schemars{description="Name of the shopping list item"}]
     pub name: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ManyItemRequest {
+    #[schemars{description="List of shopping list items"}]
+    pub names: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -31,10 +40,47 @@ impl ShoppingLists {
         ShoppingLists { env }
     }
 
+    #[tool(description = "Mark shopping list items as done")]
+    pub async fn mark_as_done(
+        &self,
+        #[tool(aggr)] ManyItemRequest { names }: ManyItemRequest,
+    ) -> Result<CallToolResult, Error> {
+        let names: Arc<HashSet<String>> = Arc::new(HashSet::from_iter(names));
+        let list_id = &self.env.list_id;
+        let items: Vec<ShoppingListItem> = self
+            .env
+            .api_client
+            .get_all_shopping_list_items(&list_id)
+            .filter_map(|x| {
+                let names = names.clone();
+                async move {
+                    match x {
+                        Ok(mut item) => {
+                            if !item.checked && names.contains(&item.note) {
+                                item.checked = true;
+                                Some(item)
+                            } else {
+                                None
+                            }
+                        }
+                        Err(_) => None,
+                    }
+                }
+            })
+            .collect::<Vec<ShoppingListItem>>()
+            .await;
+        match self.env.api_client.update_shopping_list_items(&items).await {
+            Ok(_) => Ok(CallToolResult::success(
+                Content::text(format!("Marked as done")).into_contents()
+            )),
+            Err(err) => Err(Error::internal_error(format!("failed to mark as done: {:?}", err), None))
+        }
+    }
+
     #[tool(description = "A new item to the shopping list")]
     pub async fn add_to_list(
         &self,
-        #[tool(aggr)] NewItemRequest { name }: NewItemRequest,
+        #[tool(aggr)] ItemRequest { name }: ItemRequest,
     ) -> Result<CallToolResult, Error> {
         let list_id = &self.env.list_id;
         match self

@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d1c35921b331674c7950742836be2c638870918c19e7d286b0e95780ed8c4fd6 # shrinks to x = false
+cc f916eb854f9ce83f1d5b721399d7b4eaa35cd43113e1fcfeb85cf4263aa6937c # shrinks to subset = 10315294061507553167, items = [ShoppingListItem { id: "a", note: "a", checked: false, label: None, shopping_list_id: "a" }, ShoppingListItem { id: "a", note: "a", checked: false, label: None, shopping_list_id: "a" }]

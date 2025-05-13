@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::sync::Arc;
 
 use crate::mealie::ShoppingListItem;
 use futures::StreamExt;
@@ -34,6 +33,20 @@ pub struct ShoppingLists {
     env: Env,
 }
 
+fn mark_named_items_as_checked(items: impl IntoIterator<Item = ShoppingListItem>, names: &[String]) -> Vec<ShoppingListItem> {
+    let names: HashSet<&String> = HashSet::from_iter(names);
+    items.into_iter()
+    .filter_map(|mut item| {
+        if names.contains(&item.note) {
+            item.checked = true;
+            Some(item)
+        } else {
+            None
+        }
+    })
+    .collect::<Vec<ShoppingListItem>>()
+}
+
 #[tool(tool_box)]
 impl ShoppingLists {
     pub fn new(env: Env) -> ShoppingLists {
@@ -45,30 +58,15 @@ impl ShoppingLists {
         &self,
         #[tool(aggr)] ManyItemRequest { names }: ManyItemRequest,
     ) -> Result<CallToolResult, Error> {
-        let names: Arc<HashSet<String>> = Arc::new(HashSet::from_iter(names));
         let list_id = &self.env.list_id;
         let items: Vec<ShoppingListItem> = self
             .env
             .api_client
             .get_all_shopping_list_items(&list_id)
-            .filter_map(|x| {
-                let names = names.clone();
-                async move {
-                    match x {
-                        Ok(mut item) => {
-                            if !item.checked && names.contains(&item.note) {
-                                item.checked = true;
-                                Some(item)
-                            } else {
-                                None
-                            }
-                        }
-                        Err(_) => None,
-                    }
-                }
-            })
+            .filter_map(|x| async move { x.ok() })
             .collect::<Vec<ShoppingListItem>>()
             .await;
+        let items = mark_named_items_as_checked(items, &names);
         match self.env.api_client.update_shopping_list_items(&items).await {
             Ok(_) => Ok(CallToolResult::success(
                 Content::text(format!("Marked as done")).into_contents()
@@ -140,6 +138,33 @@ impl ServerHandler for ShoppingLists {
         ServerInfo {
             instructions: Some("Mealie shopping lists".into()),
             ..Default::default()
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    fn arb_item() -> impl Strategy<Value = ShoppingListItem> {
+        ("[a-z]{1,5}", "[a-z]{1,5}", "[a-z]{1,5}", any::<bool>()).prop_map(|(id,note,shopping_list_id,checked)| {
+            ShoppingListItem{ id, note, checked, shopping_list_id, label: None }
+        })
+    }
+
+
+    proptest! {
+
+        #[test]
+        fn test_foo(subset: usize, items in prop::collection::vec(arb_item(), 1..5)) {
+            let subset = items[0..subset % items.len()].to_vec().into_iter().map(|x| x.note).collect::<Vec<String>>();
+            let collected = mark_named_items_as_checked(items, &subset);
+            for item in subset {
+                let found = collected.clone().into_iter().find(|x| x.note == item);
+                assert_eq!(Some(item), found.map(|x| x.note));
+            }
         }
     }
 }

@@ -172,7 +172,7 @@ pub struct Label {
     pub id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ShoppingListItem {
     pub id: String,

@@ -10,6 +10,10 @@ reqwest = { version = "0.12.15", features = ["stream", "json"] }
 rmcp = { version = "0.1.5", features = ["transport-child-process", "transport-io"] }
 serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.45.0", features = ["full"] }
+tracing = "0.1.41"
+tracing-journald = "0.3.1"
+tracing-subscriber = "0.3.19"
+uuid = { version = "1.16.0", features = ["v4"] }
 
 [dev-dependencies]
 proptest = "1.6.0"

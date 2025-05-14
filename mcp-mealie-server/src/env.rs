@@ -11,6 +11,9 @@ impl Env {
     pub async fn build(conf: Conf) -> anyhow::Result<Env> {
         let list_id = conf.list_id.clone();
         let api_client = MealieClient::build(conf)?;
-        Ok(Env { api_client, list_id })
+        Ok(Env {
+            api_client,
+            list_id,
+        })
     }
 }

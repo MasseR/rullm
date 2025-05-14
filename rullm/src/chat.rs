@@ -5,16 +5,28 @@ use async_openai::{
     types::{
         ChatCompletionMessageToolCall, ChatCompletionRequestAssistantMessage,
         ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage,
-        ChatCompletionRequestToolMessage, ChatCompletionRequestToolMessageArgs,
-        ChatCompletionRequestUserMessage, ChatCompletionRequestUserMessageArgs,
+        ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestToolMessage,
+        ChatCompletionRequestToolMessageArgs, ChatCompletionRequestUserMessage,
+        ChatCompletionRequestUserMessageArgs,
     },
 };
+use chrono::Utc;
 use rmcp::model::{RawContent, RawTextContent};
 use rustyline::{DefaultEditor, error::ReadlineError};
 
 pub async fn run(env: Env) -> anyhow::Result<()> {
     let mut rl = DefaultEditor::new()?;
     let mut messages: Vec<ChatCompletionRequestMessage> = vec![];
+    let system_prompt = format!(
+        "You are a helpful assistant. You know that today is {}",
+        Utc::now().date_naive().format("%Y-%m-%d").to_string()
+    );
+    messages.push(
+        ChatCompletionRequestSystemMessageArgs::default()
+            .content(system_prompt)
+            .build()?
+            .into(),
+    );
     loop {
         let readline = rl.readline(">> ");
         match readline {
@@ -31,7 +43,6 @@ pub async fn run(env: Env) -> anyhow::Result<()> {
     }
     Ok(())
 }
-
 
 // Chat with AI
 // Will keep track of message history via the 'messages' field

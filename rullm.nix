@@ -14,6 +14,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeBuildInputs = [openssl.dev pkg-config];
   PKG_CONFIG_PATH = "${openssl.dev}/lib/pkgconfig";
 
-  cargoHash = "sha256-4a9ElX76trKA10UxuPWN4d1yoQvrSkC7O1bGA7uS608=";
+  cargoHash = "sha256-bCLe38aKaG3gK30ZC5OC4KMCyNN+kYqRPz0p5K1126U=";
 
 })

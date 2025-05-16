@@ -70,7 +70,7 @@ async fn get_index() -> Markup {
                         // Placeholder, will be filled by websockets
                         div class="flex-grow overflow-y-auto p-5 flex flex-col space-y-4" #chat_room {}
                         form class="input-area p-4 border-t border-gray-300 bg-gray-100 flex items-center" #form ws-send _="on submit target.reset()" {
-                            textarea class="flex-grow p-2 border border-gray-300 rounded-xl mr-2 resize-none text-base leading-tight min-h-[40px] max-h-[150px] overflow-y-auto focus:outline-none focus:border-blue-500" placeholder="How are you" name="chat_message" {}
+                            textarea _="on keyup[key=='Enter' and shiftKey is false] document.getElementById('form').requestSubmit()" class="flex-grow p-2 border border-gray-300 rounded-xl mr-2 resize-none text-base leading-tight min-h-[40px] max-h-[150px] overflow-y-auto focus:outline-none focus:border-blue-500" placeholder="How are you" name="chat_message" {}
                             // input name="chat_message";
                             button type="submit" class="px-5 py-2 bg-blue-500 text-white border-none rounded-xl cursor-pointer text-base flex-shrink-0 hover:bg-blue-600 focus:outline-none" { "Send" }
                         }

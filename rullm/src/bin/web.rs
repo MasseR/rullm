@@ -12,7 +12,7 @@ use axum::{
     routing::{any, get},
 };
 use clap::Parser;
-use maud::{html, Markup, DOCTYPE};
+use maud::{DOCTYPE, Markup, html};
 use rullm::{args::Args, env::Env};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{info, instrument, level_filters::LevelFilter, warn};
@@ -80,7 +80,6 @@ async fn ws_handler(ws: WebSocketUpgrade, State(env): State<Arc<Env>>) -> impl I
     ws.on_upgrade(move |socket| handle_socket(socket, env))
 }
 
-
 #[instrument(skip(socket, env))]
 async fn handle_socket(mut socket: WebSocket, env: Arc<Env>) {
     if socket
@@ -102,6 +101,3 @@ async fn handle_socket(mut socket: WebSocket, env: Arc<Env>) {
         chatter.run().await.expect("Failed");
     }
 }
-
-
-

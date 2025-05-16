@@ -2,16 +2,17 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail};
 use async_openai::types::{
-    ChatCompletionMessageToolCall, ChatCompletionRequestAssistantMessageArgs, ChatCompletionRequestMessage, ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestToolMessageArgs, ChatCompletionRequestUserMessageArgs
+    ChatCompletionMessageToolCall, ChatCompletionRequestAssistantMessageArgs,
+    ChatCompletionRequestMessage, ChatCompletionRequestSystemMessageArgs,
+    ChatCompletionRequestToolMessageArgs, ChatCompletionRequestUserMessageArgs,
 };
-use axum::
-    extract::
-        ws::{Message, WebSocket}
-
-;
+use axum::extract::ws::{Message, WebSocket};
 use chrono::Utc;
-use maud::{html, Markup, PreEscaped};
-use rmcp::{model::{RawContent, RawTextContent}, serde_json};
+use maud::{Markup, PreEscaped, html};
+use rmcp::{
+    model::{RawContent, RawTextContent},
+    serde_json,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::debug;
@@ -29,7 +30,6 @@ struct HtmxMessage {
     chat_message: String,
 }
 
-
 pub struct HtmxChat {
     socket: WebSocket,
     messages: Vec<ChatCompletionRequestMessage>,
@@ -46,9 +46,15 @@ impl HtmxChat {
         messages.push(
             ChatCompletionRequestSystemMessageArgs::default()
                 .content(system_prompt)
-                .build().unwrap()
-                .into());
-        HtmxChat{ socket, messages, env }
+                .build()
+                .unwrap()
+                .into(),
+        );
+        HtmxChat {
+            socket,
+            messages,
+            env,
+        }
     }
 
     async fn recv(&mut self) -> anyhow::Result<Option<HtmxMessage>> {
@@ -68,19 +74,29 @@ impl HtmxChat {
         let out_message = html! { div #chat_room class="flex-grow overflow-y-auto p-5 flex flex-col space-y-4" hx-swap-oob="beforeend" { (msg) } };
         self.socket
             .send(Message::Text(out_message.into_string().into()))
-        .await?;
+            .await?;
         Ok(())
     }
 
     async fn send_user(&mut self, msg: &str) -> anyhow::Result<()> {
-        self.messages.push(ChatCompletionRequestUserMessageArgs::default().content(msg).build()?.into());
+        self.messages.push(
+            ChatCompletionRequestUserMessageArgs::default()
+                .content(msg)
+                .build()?
+                .into(),
+        );
         let markup = html! { div class="user-message bg-blue-500 text-white self-end rounded-xl rounded-br-none p-3 max-w-3/4 break-words" { (PreEscaped(markdown::to_html(msg))) } };
         self.send(markup).await?;
         Ok(())
     }
 
     async fn send_assistant(&mut self, msg: &str) -> anyhow::Result<()> {
-        self.messages.push(ChatCompletionRequestAssistantMessageArgs::default().content(msg).build()?.into());
+        self.messages.push(
+            ChatCompletionRequestAssistantMessageArgs::default()
+                .content(msg)
+                .build()?
+                .into(),
+        );
         let markup = html! { div #assistant class="assistant-message bg-gray-200 text-black self-start rounded-xl rounded-bl-none p-3 max-w-3/4 break-words" { (PreEscaped(markdown::to_html(msg)))} };
         self.send(markup).await?;
         Ok(())
@@ -92,7 +108,7 @@ impl HtmxChat {
                 Some(msg) => {
                     self.process_message(&msg.chat_message).await?;
                 }
-                None => return Ok(())
+                None => return Ok(()),
             }
         }
     }
@@ -118,16 +134,18 @@ impl HtmxChat {
             if tool_calls.is_empty() {
                 self.send_assistant(&assistant_response).await?;
 
-                return Ok(())
+                return Ok(());
+            } else {
+                self.process_function_calls(&assistant_response, &tool_calls)
+                    .await?;
             }
-            else {
-                self.process_function_calls(&assistant_response, &tool_calls).await?;
-            }
-
         }
     }
 
-    async fn send_tool_calls(&mut self, calls: Vec<ChatCompletionRequestMessage>) -> anyhow::Result<()> {
+    async fn send_tool_calls(
+        &mut self,
+        calls: Vec<ChatCompletionRequestMessage>,
+    ) -> anyhow::Result<()> {
         Ok(self.messages.extend(calls))
     }
 
@@ -137,7 +155,13 @@ impl HtmxChat {
         tool_calls: &[ChatCompletionMessageToolCall],
     ) -> anyhow::Result<()> {
         let mut messages = vec![];
-        messages.push(ChatCompletionRequestAssistantMessageArgs::default().content(assistant_response).tool_calls(Vec::from(tool_calls)).build()?.into());
+        messages.push(
+            ChatCompletionRequestAssistantMessageArgs::default()
+                .content(assistant_response)
+                .tool_calls(Vec::from(tool_calls))
+                .build()?
+                .into(),
+        );
         for call in Vec::from(tool_calls) {
             debug!("Calling {}", call.function.name);
             let id = call.id;
@@ -149,7 +173,13 @@ impl HtmxChat {
                     x => bail!("Unknown response: {:?}", x),
                 }
             }
-            messages.push(ChatCompletionRequestToolMessageArgs::default().content(text_response).tool_call_id(id).build()?.into());
+            messages.push(
+                ChatCompletionRequestToolMessageArgs::default()
+                    .content(text_response)
+                    .tool_call_id(id)
+                    .build()?
+                    .into(),
+            );
         }
         self.send_tool_calls(messages).await?;
         Ok(())

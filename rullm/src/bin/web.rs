@@ -16,7 +16,7 @@ use axum::{
 };
 use chrono::Utc;
 use clap::Parser;
-use maud::{DOCTYPE, Markup, html};
+use maud::{html, Markup, PreEscaped, DOCTYPE};
 use rmcp::{model::{RawContent, RawTextContent}, serde_json};
 use rullm::{args::Args, env::Env};
 use serde::{Deserialize, Serialize};
@@ -137,14 +137,14 @@ impl HtmxChat {
 
     async fn send_user(&mut self, msg: &str) -> anyhow::Result<()> {
         self.messages.push(ChatCompletionRequestUserMessageArgs::default().content(msg).build()?.into());
-        let markup = html! { div class="user-message bg-blue-500 text-white self-end rounded-xl rounded-br-none p-3 max-w-3/4 break-words" { (msg) } };
+        let markup = html! { div class="user-message bg-blue-500 text-white self-end rounded-xl rounded-br-none p-3 max-w-3/4 break-words" { (PreEscaped(markdown::to_html(msg))) } };
         self.send(markup).await?;
         Ok(())
     }
 
     async fn send_assistant(&mut self, msg: &str) -> anyhow::Result<()> {
         self.messages.push(ChatCompletionRequestAssistantMessageArgs::default().content(msg).build()?.into());
-        let markup = html! { div #assistant class="assistant-message bg-gray-200 text-black self-start rounded-xl rounded-bl-none p-3 max-w-3/4 break-words" { (msg)} };
+        let markup = html! { div #assistant class="assistant-message bg-gray-200 text-black self-start rounded-xl rounded-bl-none p-3 max-w-3/4 break-words" { (PreEscaped(markdown::to_html(msg)))} };
         self.send(markup).await?;
         Ok(())
     }

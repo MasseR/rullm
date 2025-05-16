@@ -6,14 +6,18 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1.0.98", features = ["backtrace"] }
 async-openai = "0.28.1"
+axum = { version = "0.8.4", features = ["ws"] }
 chrono = "0.4.41"
 clap = { version = "4.5.37", features = ["derive"] }
 config = "0.15.11"
 dirs-next = "2.0.0"
+maud = { version = "0.27.0", features = ["axum"] }
 rmcp = { version = "0.1.5", features = ["transport-child-process", "client"] }
 rustyline = { version = "15.0.0", features = ["with-file-history"] }
 serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "2.0.12"
 tokio = { version = "1.45.0", features = ["full"] }
+tower-http = { version = "0.6.4", features = ["trace", "fs"] }
 tracing = "0.1.41"
 tracing-journald = "0.3.1"
 tracing-subscriber = "0.3.19"
